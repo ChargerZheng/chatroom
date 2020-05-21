@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>聊天室</title>
+    <link href="/static/css/bootstrap.css" rel="stylesheet" type="text/css" />
+    <script src="/static/js/jquery.js"></script>
+    <script src="/static/js/jquery-form.js"></script>
+    <script src="/static/js/bootstrap.js"></script>
+    <script type="text/JavaScript">
+        var websocket = null;
+
+        var sessionId;
+        var chatRoomId='[[${chatRoomId}]]';
+        var password='[[${password}]]';
+        var userName='[[${userName}]]';
+        //判断当前浏览器是否支持WebSocket
+        if('WebSocket' in window){
+            websocket = new WebSocket('ws://localhost:8080//chatRoom/'+chatRoomId+'/'+password+'/'+userName+'/');
+        }
+        else{
+            alert('Not support websocket');
+        }
+
+        //连接成功建立的回调方法
+        websocket.onopen = function(event){
+            setMessage("连接成功");
+        };
+
+        //连接发生错误的回调方法
+        websocket.onerror = function(){
+            setMessage("连接错误");
+        };
+
+        //接收到消息的回调方法
+        websocket.onmessage = function(event){
+            var jsonData=JSON.parse(event.data);
+            var message;
+            switch (jsonData.status) {
+                case 200:
+                    message='<p>'+jsonData.message+'</p>';
+                    setMessage(message);
+                    break;//普通消息
+                case 301:
+                    message='人数：'+jsonData.message
+                    setUsersNumber(message);//聊天室人数更新
+                    break;
+                case 302:
+                    setChatRoomName(jsonData.message);//聊天室属性（聊天室名...）更新
+                    break;
+                case 303:
+                    sessionId=jsonData.message;//聊天室属性（聊天室名...）更新
+                    break;
+                case 400:
+                    setMessage(jsonData.message);
+                    closeWebSocket();
+                    break;//断开连接
+                default: break;
+            }
+        };
+
+        //连接关闭的回调方法
+        websocket.onclose = function(){
+            setMessage("关闭连接");
+        };
+
+        //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+        window.onbeforeunload = function(){
+            websocket.close();
+        };
+
+        window.onbeforeunload = function(event){
+            websocket.close();
+        };
+
+        $(function () {
+
+            $('#sendText').keydown(function (event) {
+
+                if (event.keyCode == 13) {
+                    event.preventDefault();
+                    send();
+                    $('#sendText').val('').focus();
+                }
+            });
+
+
+            $('#sendBtn').click(function () {
+                send();
+                $('#sendText').val('').focus();
+            });
+        });
+
+        //将消息显示在消息栏
+        function setMessage(message){
+            $('#message').append(message);
+            var div = document.getElementById("message");
+            div.scrollTop = div.scrollHeight;
+        }
+
+        //更新人数
+        function setUsersNumber(usersNumber){
+            $('#usersNumber').html(usersNumber);
+        }
+
+        //更新聊天室名
+        function setChatRoomName(chatRoomName){
+            $('#chatRoomName').html(chatRoomName);
+        }
+
+        //关闭连接
+        function closeWebSocket(){
+            websocket.close();
+            websocket=null;
+        }
+
+        //发送消息
+        function send(){
+            var message = $('#sendText').val();
+            if(message==null||message=='')return;
+            if(websocket!=null) {
+                websocket.send(message);
+            }else {
+                alert('已经断开连接');
+            }
+        }
+
+        function changeUserName(){
+           var newUserName=$('#newUserName').val();
+            $.ajax({
+                url:"/changeUserName",
+                contentType:"application/x-www-form-urlencoded",
+                data:{"chatRoomId":chatRoomId,"newUserName":newUserName,"sessionId":sessionId,},
+                dataType:"json",
+                type:"post",
+                success:function (data) {
+                    $('#newUserName').val('');
+                    alert(data.message);
+                },
+                error:function (data) {
+                }
+            });
+        }
+
+
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <div class="row clearfix">
+
+        <div class="col-md-12 column">
+            <nav class="navbar navbar-default">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <a class="navbar-brand" href="index">
+                            返回首页«
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div class="col-md-3 column"></div>
+
+        <div class="col-md-6 column">
+
+            <div class="page-header" style="text-align: center">
+                <h3 id="chatRoomName" style="display: inline;">群聊名称</h3>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading">Id:[[${chatRoomId}]]<small style="float: right" id="usersNumber"></small></div>
+                <div class="panel-body">
+                    <div id="message" style="height: 500px" class="pre-scrollable"></div>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <form>
+                        <div class="form-group">
+                            <textarea id="sendText" class="form-control" rows="5" style="resize: none"></textarea>
+                        </div>
+                        <div class="form-group" style="text-align: center">
+                            <button id="sendBtn" type="button" class="btn btn-default">发送 (Enter)</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+
+
+        <div class="col-md-3 column" style="text-align: center">
+            <div class="page-header" style="text-align: center">
+                <h3 style="display: inline;">信息修改</h3>
+            </div>
+            <form class="form-horizontal">
+                <div class="form-group">
+                    <label for="newUserName">名字</label>
+                    <input type="text" class="form-control" id="newUserName" placeholder="输入名字">
+                </div>
+                <button onclick="changeUserName()" id="changeUserNameBtn" type="button" class="btn btn-default">修改</button>
+            </form>
+
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
