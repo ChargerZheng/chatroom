@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Controller
-public class MyChatController {
+public class ChatController {
 
     private MessageEntity messageEntity=new MessageEntity();
 
