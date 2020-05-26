@@ -25,6 +25,7 @@
             dataType:"json",
             type:"get",
             success:function (data) {
+                $('#chatRooms').html('');
                 $.each(data,function (idx,obj) {
                     $('#chatRooms').append('<a href="#" onclick="selectChatRoomId('+obj.chatRoomId+')" class="list-group-item" data-toggle="modal" data-target="#joinChatRoomPannel1">' +
                         '<h4 class="list-group-item-heading">'+obj.chatRoomName+'</h4>' +
