@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Created-By: IntelliJ IDEA
+Built-By: zjc59
+Build-Jdk: 1.8.0_181
+Implementation-Title: chatroom
+Implementation-Version: 0.0.2-SNAPSHOT
+Implementation-Vendor-Id: com.zjc
+Main-Class: ${start-class}
+

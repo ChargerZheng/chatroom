@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.zjc</groupId>
-    <artifactId>chatroom</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>chatroom</name>
-    <description>Demo project for Spring Boot</description>
+        <artifactId>chatroom</artifactId>
+        <version>0.0.2-SNAPSHOT</version>
+        <name>chatroom</name>
+    <description>Demo project for websocket</description>
 
     <properties>
         <java.version>1.8</java.version>
@@ -20,10 +20,14 @@
 
     <dependencies>
 
+        <!--template-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
+        <!--template-->
+
+        <!--web-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -32,12 +36,39 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+        <!--web-->
 
+        <!--json-->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
             <version>1.2.47</version>
         </dependency>
+        <!--json-->
+
+        <!--config-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+        </dependency>
+        <!--config-->
+
+        <!--storage-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+            <version>1.1.20</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+        <!--storage-->
+
     </dependencies>
 
     <build>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>首页</title>
+</head>
+
+<link href="/static/css/bootstrap.css" rel="stylesheet" type="text/css" />
+<script src="/static/js/jquery.js"></script>
+<script src="/static/js/jquery-form.js"></script>
+<script src="/static/js/bootstrap.js"></script>
+
+<script>
+    var currentChatRoomId;
+
+    $(function () {
+        getRooms();
+    });
+
+    //获取群天室列表
+    function getRooms() {
+        $.ajax({
+            url:"/getChatRooms",
+            contentType:"application/x-www-form-urlencoded",
+            dataType:"json",
+            type:"get",
+            success:function (data) {
+                $.each(data,function (idx,obj) {
+                    $('#chatRooms').append('<a href="#" onclick="selectChatRoomId('+obj.chatRoomId+')" class="list-group-item" data-toggle="modal" data-target="#joinChatRoomPannel1">' +
+                        '<h4 class="list-group-item-heading">'+obj.chatRoomName+'</h4>' +
+                        '<p class="list-group-item-text">当前人数：'+obj.usersNumber+'</p>' +
+                        '</a>');
+                });
+                if(data.message==500)
+                    alert(data.message);
+            },
+            error:function (data) {
+            }
+        });
+    }
+
+    function selectChatRoomId(chatRoomId) {
+        currentChatRoomId=chatRoomId;
+        $('#j1ChatRoomId').val(currentChatRoomId);
+    }
+
+    function createChatRoom() {
+        var chatRoomName= $('#cChatRoomName').val();
+        var password=$('#cPassword').val();
+
+        $.ajax({
+            url:"/addChatRoom",
+            contentType:"application/x-www-form-urlencoded",
+            data:{"chatRoomName":chatRoomName,"password":password},
+            dataType:"json",
+            type:"post",
+            success:function (data) {
+                if(data.status==200) {
+                    //alert('创建成功，聊天室Id：'+data.message);
+                    /*$('#chatRoomId').html('聊天室Id:'+data.message);
+                    $('#joinEntry').attr("hidden",false);
+                    */
+                    var userName='群主';
+                    $('#joinBtn').attr("href","toChatRoom?chatRoomId="+data.message+"&password="+password+"&userName="+userName);
+                    $('#createRemind').attr("hidden",false);
+                    $('#chatRoomIdDisplay').html('创建成功！聊天室Id:'+data.message);
+                    getRooms();
+                }
+                if(data.message==500)
+                    alert(data.message);
+            },
+            error:function (data) {
+            }
+        })
+    }
+</script>
+
+<body>
+    <div class="container">
+        <div class="row clearfix">
+
+            <div class="col-md-12 column">
+                <nav class="navbar navbar-default">
+                    <div class="container-fluid">
+                        <div class="navbar-header">
+                            <a class="navbar-brand" href="index">
+                                首页
+                            </a>
+                        </div>
+                    </div>
+                </nav>
+                <div class="page-header">
+                    <h1 align="center">Hello!多人聊天</h1>
+                </div>
+            </div>
+
+            <!--创建聊天室-->
+            <div class="col-md-3 column">
+                <button type="button" class="btn btn-primary btn-lg btn-block" data-toggle="modal" data-target="#createChatRoomPannel">创建聊天室</button>
+                <!-- 创建群聊 弹窗-->
+                <div class="modal fade" id="createChatRoomPannel" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"></button>
+                                <h4 class="modal-title">创建聊天室</h4>
+                            </div>
+
+                            <div class="modal-body">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="cChatRoomName" class="control-label">聊天室名</label>
+                                        <input type="text" class="form-control" id="cChatRoomName">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cPassword" class="control-label">加入密码</label>
+                                        <input type="password" class="form-control" id="cPassword"></input>
+                                    </div>
+                                    <div class="form-group" id="createRemind" hidden="hidden">
+                                        <div class="alert alert-success" id="chatRoomIdDisplay" role="alert">...</div>
+                                        <a class="btn btn-default" style="text-decoration: none" id="joinBtn">进入群聊</a>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                                <button type="button" class="btn btn-primary" onclick="createChatRoom()">创建聊天室</button>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- 创建群聊 弹窗-->
+            </div> <!--创建聊天室-->
+
+
+
+
+            <!--聊天室列表-->
+            <div class="col-md-6 column">
+                <div class="list-group" id="chatRooms">
+                    <!--<a href="#" onclick="selectChatRoomId(1001)" class="list-group-item" data-toggle="modal" data-target="#joinChatRoomPannel1">
+                        <h4 class="list-group-item-heading">List group item heading</h4>
+                        <p class="list-group-item-text">当前人数：</p>
+                    </a>-->
+                </div>
+
+                <!-- 加入群聊 弹窗-->
+                <div class="modal fade" id="joinChatRoomPannel1" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"></button>
+                                <h4 class="modal-title">加入聊天室</h4>
+                            </div>
+
+                            <div class="modal-body">
+                                <form action="toChatRoom" method="post">
+                                    <div class="form-group">
+                                        <label for="j1ChatRoomId" class="control-label">聊天室Id</label>
+                                        <input type="text" class="form-control" id="j1ChatRoomId" name="chatRoomId" readonly="readonly">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="j1Password" class="control-label">加入密码</label>
+                                        <input type="password" class="form-control" id="j1Password" name="password"></input>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="j1UserName" class="control-label">群聊昵称</label>
+                                        <input type="text" class="form-control" id="j1UserName" name="userName"></input>
+                                    </div>
+                                    <div class="form-group" style="text-align: center">
+                                        <button type="submit" class="btn btn-default">进入聊天室</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- 加入群聊 弹窗-->
+            </div><!--聊天室列表-->
+
+
+
+
+
+
+
+            <!-- 加入群聊 -->
+            <div class="col-md-3 column">
+                <button type="button" class="btn btn-default btn-lg btn-block" data-toggle="modal" data-target="#joinChatRoomPannel2">加入群聊</button>
+                <!-- 加入群聊 弹窗-->
+                <div class="modal fade" id="joinChatRoomPannel2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"></button>
+                                <h4 class="modal-title">加入聊天室</h4>
+                            </div>
+
+                            <div class="modal-body">
+                                <form action="toChatRoom" method="post">
+                                    <div class="form-group">
+                                        <label for="j2ChatRoomId" class="control-label">聊天室Id</label>
+                                        <input type="text" class="form-control" id="j2ChatRoomId" name="chatRoomId">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="j2Password" class="control-label">加入密码</label>
+                                        <input type="password" class="form-control" id="j2Password" name="password"></input>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="j2UserName" class="control-label">群聊昵称</label>
+                                        <input type="text" class="form-control" id="j2UserName" name="userName"></input>
+                                    </div>
+                                    <div class="form-group" style="text-align: center">
+                                        <button type="submit" class="btn btn-default">进入聊天室</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- 加入群聊 弹窗-->
+            </div><!-- 加入群聊 -->
+
+
+        </div>
+    </div>
+</body>
+</html>

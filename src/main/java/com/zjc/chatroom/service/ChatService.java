@@ -1,6 +1,8 @@
 package com.zjc.chatroom.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.zjc.chatroom.component.MyChatDecoder;
+import com.zjc.chatroom.component.MyChatEncoder;
 import com.zjc.chatroom.config.GetHttpSessionConfigurator;
 import com.zjc.chatroom.domain.ChatRoom;
 import com.zjc.chatroom.domain.MessageEntity;
@@ -20,6 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /*
 * status规则
 * 200   普通消息
+* 201   图片消息
 * 301   实时人数更新消息
 * 302   聊天室信息
 * 303   通知用户sessionId
@@ -28,7 +31,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Service
 @ServerEndpoint(value="/chatRoom/{chatRoomId}/{password}/{userName}",
         decoders = MyChatDecoder.class,
-        //encoders = MyChatEncoder.class,
+        encoders = MyChatEncoder.class,
         configurator = GetHttpSessionConfigurator.class)
 public class ChatService {
     private ChatRoom chatRoom;//当前会话所在聊天室
@@ -87,10 +90,10 @@ public class ChatService {
                 onClose(session,new CloseReason(CloseReason.CloseCodes.CANNOT_ACCEPT,"Incorrect Password"));
             }else{
                 this.chatRoom.addUser(user);
-                sendMessage(session,new MessageEntity(303,this.user.getSession().getId()));
-                sendMessage(session, new MessageEntity(302,this.chatRoom.getChatRoomName()));//如果扩展可以随时改群聊名称，统一使用实时更新信息
-                sendMessageInRoom(new MessageEntity(200,"用户'"+userName+"'加入了群聊！"));//向房间广播新用户加入消息，可以不要
-                sendMessageInRoom(new MessageEntity(301,this.chatRoom.getUsersNumber().toString()));//更新在线人数
+                sendMessage(session,new MessageEntity(303,this.user.getSession().getId()));//随时更新的，系统消息
+                sendMessage(session, new MessageEntity(302,this.chatRoom.getChatRoomName()));//随时更新的，系统消息
+                sendMessageInRoom(new MessageEntity(200,"系统",userName+"'加入了群聊！"));//聊天消息
+                sendMessageInRoom(new MessageEntity(301,this.chatRoom.getUsersNumber().toString()));//随时更新的，系统消息
             }
         }else{
             errorNotice(session,new MessageEntity(400,"聊天室不存在"));//通知用户聊天室不存在，断开连接
@@ -102,19 +105,22 @@ public class ChatService {
     public void onClose(Session session, CloseReason closeReason) {
         if(this.chatRoom!=null){
             this.chatRoom.remove(session);
-            sendMessageInRoom(new MessageEntity(301,this.chatRoom.getUsersNumber().toString()));//更新在线人数
-            sendMessageInRoom(new MessageEntity(200,"用户"+this.user.getUserName()+"离开了群聊！"));
+            sendMessageInRoom(new MessageEntity(301,this.chatRoom.getUsersNumber().toString()));//系统消息
+            sendMessageInRoom(new MessageEntity(200,"系统",this.user.getUserName()+"离开了群聊！"));//聊天消息
         }
         System.out.println("一个连接断开："+closeReason);
     }
 
     @OnMessage
     public void onMessage(String message) {
-        System.out.println("收到消息");
+        JSONObject pa=JSONObject.parseObject(message);
+
         if(this.chatRoom!=null){
+            //用户发送消息只有message和status，sender要赋值
             MessageEntity messageEntity=new MessageEntity();
-            messageEntity.setStatus(200);
-            messageEntity.setMessage(this.user.getUserName()+":"+message);
+            messageEntity.setStatus(pa.getInteger("status"));
+            messageEntity.setSender(this.user.getUserName());
+            messageEntity.setMessage(pa.getString("message"));
             sendMessageInRoom(messageEntity);//向聊天室广播
         }
     }
@@ -133,11 +139,10 @@ public class ChatService {
     * */
     public void sendMessage(Session session, Object message)  {
         String data= JSON.toJSONString(message);
-
         reentrantLock.lock();
         try {
             session.getBasicRemote().sendText(data);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         reentrantLock.unlock();
