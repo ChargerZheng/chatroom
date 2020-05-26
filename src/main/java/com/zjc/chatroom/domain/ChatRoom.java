@@ -60,9 +60,13 @@ public class ChatRoom {
         this.usersNumber++;
     }
 
-    public void remove(Session session){
-        this.users.remove(session.getId());
-        this.usersNumber--;
+    public boolean remove(Session session){
+        if(this.users.get(session.getId())!=null) {
+            this.users.remove(session.getId());
+            this.usersNumber--;
+            return true;
+        }
+        return false;
     }
 
 }

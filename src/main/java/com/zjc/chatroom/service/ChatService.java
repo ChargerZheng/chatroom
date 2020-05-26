@@ -103,8 +103,7 @@ public class ChatService {
 
     @OnClose
     public void onClose(Session session, CloseReason closeReason) {
-        if(this.chatRoom!=null){
-            this.chatRoom.remove(session);
+        if(this.chatRoom!=null && this.chatRoom.remove(session)){
             sendMessageInRoom(new MessageEntity(301,this.chatRoom.getUsersNumber().toString()));//系统消息
             sendMessageInRoom(new MessageEntity(200,"系统",this.user.getUserName()+"离开了群聊！"));//聊天消息
         }
